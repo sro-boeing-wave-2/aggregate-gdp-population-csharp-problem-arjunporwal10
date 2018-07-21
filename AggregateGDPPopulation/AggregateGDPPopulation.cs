@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AggregateGDPPopulation
 {
@@ -13,34 +14,54 @@ namespace AggregateGDPPopulation
     }
     public class Class1
     {
-        public static void AggregateGDPPopulation(string FilePath)
+        public async Task<string> ReadFile(string filePath)
         {
-
-            string[] AllData = File.ReadAllLines(FilePath);
-            StreamReader r = new StreamReader(@"../../../../AggregateGDPPopulation/data/countryContinentJsonFile.json");
-            var json = r.ReadToEnd();
-            r.Close();
-            var Mapper = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-            string[] headers = AllData[0].Split(',');
-            int indexOfPopulation = Array.IndexOf(headers, "\"Population (Millions) 2012\"");
-            int indexOfGDP = Array.IndexOf(headers, "\"GDP Billions (USD) 2012\"");
-            int indexOfCountries = Array.IndexOf(headers, "\"Country Name\"");
+            string content = "";
+            using (StreamReader reader = new StreamReader(filePath))
+            {
+                content = await reader.ReadToEndAsync();
+            }
+            return content;
+        }
+        public async Task WriteFile(Dictionary<String, GDPPopulation> dictionaryOfObjects)
+        {
+            string outputFilePath = Environment.CurrentDirectory + @"/output/output.json";
+            if (!Directory.Exists(Environment.CurrentDirectory + @"/output"))
+            {
+                Directory.CreateDirectory(Environment.CurrentDirectory + @"/output");
+            }
+            string JsonObject = JsonConvert.SerializeObject(dictionaryOfObjects);
+                using (StreamWriter writer = new StreamWriter(outputFilePath))
+                {
+                    await writer.WriteAsync(JsonObject);
+                }  
+        }
+        public async Task AggregateGDPPopulation(string filePath)
+        {
+            string mapperFilePath = @"../../../../AggregateGDPPopulation/data/countryContinentJsonFile.json";
+            var ReadTask1 = ReadFile(filePath);
+            var Readtask2 = ReadFile(mapperFilePath);
+            await Task.WhenAll(ReadTask1,Readtask2);
+            var Mapper = JsonConvert.DeserializeObject<Dictionary<string, string>>(Readtask2.Result);
+            string[] AllDataProcessed = ReadTask1.Result.Replace("\"", String.Empty).Trim().Split('\n');
+            string[] headers = AllDataProcessed[0].Split(',');
+            int indexOfPopulation = Array.IndexOf(headers, "Population (Millions) 2012");
+            int indexOfGDP = Array.IndexOf(headers, "GDP Billions (USD) 2012");
+            int indexOfCountries = Array.IndexOf(headers, "Country Name");
             Dictionary<string, GDPPopulation> objectDictonary = new Dictionary<string, GDPPopulation>();
-            for (int i = 1; i < AllData.Length; i++)
+            for (int i = 1; i < ReadTask1.Result.Length; i++)
             {
                 try
                 {
-                    string[] row = AllData[i].Split(',');
-                    string countryName = row[indexOfCountries].Trim('"');
+                    string[] row = AllDataProcessed[i].Split(',');
+                    string countryName = row[indexOfCountries];
                     string nameOfContinent = Mapper[countryName];
-                    float Population = float.Parse(row[indexOfPopulation].Trim('"'));
-                    float Gdp = float.Parse(row[indexOfGDP].Trim('"'));
+                    float Population = float.Parse(row[indexOfPopulation]);
+                    float Gdp = float.Parse(row[indexOfGDP]);
                     try
                     {
-
                         objectDictonary[nameOfContinent].GDP_2012 += Gdp;
                         objectDictonary[nameOfContinent].POPULATION_2012 += Population;
-
                     }
                     catch
                     {
@@ -48,20 +69,9 @@ namespace AggregateGDPPopulation
                         objectDictonary.Add(nameOfContinent, Object);
                     }
                 }
-                catch { }
+                catch { }               
             }
-            var finalObject = JsonConvert.SerializeObject(objectDictonary);
-            string outputFilePath = Environment.CurrentDirectory + @"/output/output.json";
-            Console.WriteLine(outputFilePath);
-            if (!Directory.Exists(Environment.CurrentDirectory + @"/output"))
-            {
-                Directory.CreateDirectory(Environment.CurrentDirectory + @"/output");
-            }
-            StreamWriter outputdata = new StreamWriter(outputFilePath);
-            outputdata.WriteLine(finalObject);
-            outputdata.Close();
-            
-            //Console.ReadLine();
+            await WriteFile(objectDictonary);
         }
     }
 }

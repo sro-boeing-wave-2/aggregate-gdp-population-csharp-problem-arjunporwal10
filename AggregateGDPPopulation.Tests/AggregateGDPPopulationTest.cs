@@ -4,15 +4,17 @@ using AggregateGDPPopulation;
 using System.IO;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace AggregateGDPPopulation.Tests
 {
     public class UnitTest1
     {
         [Fact]
-        public void Test1()
+        public async Task IsEqualExpectedAndActualJson()
         {
-            Class1.AggregateGDPPopulation(@"../../../../AggregateGDPPopulation/data/datafile.csv");
+            Class1 myClassObject = new Class1();
+            await myClassObject.AggregateGDPPopulation(@"../../../../AggregateGDPPopulation/data/datafile.csv");
             string actualFile = File.ReadAllText("../../../expected-output.json");
             string expectedFile = File.ReadAllText(Environment.CurrentDirectory + @"/output/output.json");
             Dictionary<string, GDPPopulation> actual = JsonConvert.DeserializeObject<Dictionary<string, GDPPopulation>>(actualFile);
@@ -23,7 +25,8 @@ namespace AggregateGDPPopulation.Tests
                 {
                     Assert.Equal(actual[key].GDP_2012, expected[key].GDP_2012);
                     Assert.Equal(actual[key].POPULATION_2012, expected[key].POPULATION_2012);
-                } else
+                }
+                else
                 {
                     Assert.True(false);
                 }
