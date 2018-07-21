@@ -17,7 +17,7 @@ namespace AggregateGDPPopulation
         {
 
             string[] AllData = File.ReadAllLines(FilePath);
-            StreamReader r = new StreamReader(@"D:\workspace\htmlplaygrnd\C#Assignment\aggregate-gdp-population-csharp-problem-arjunporwal10\countryContinentJsonFile.json");
+            StreamReader r = new StreamReader(@"../../../../AggregateGDPPopulation/data/countryContinentJsonFile.json");
             var json = r.ReadToEnd();
             var Mapper = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             string[] headers = AllData[0].Split(',');

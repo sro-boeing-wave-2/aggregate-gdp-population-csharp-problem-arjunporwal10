@@ -12,7 +12,7 @@ namespace AggregateGDPPopulation.Tests
         [Fact]
         public void Test1()
         {
-            Class1.AggregateGDPPopulation(@"D:\workspace\htmlplaygrnd\C#Assignment\aggregate-gdp-population-csharp-problem-arjunporwal10\AggregateGDPPopulation\data\datafile.csv");
+            Class1.AggregateGDPPopulation(@"../../../../AggregateGDPPopulation/data/datafile.csv");
             string actualFile = File.ReadAllText("../../../expected-output.json");
             string expectedFile = File.ReadAllText(Environment.CurrentDirectory + @"/output/output.json");
             Dictionary<string, GDPPopulation> actual = JsonConvert.DeserializeObject<Dictionary<string, GDPPopulation>>(actualFile);
