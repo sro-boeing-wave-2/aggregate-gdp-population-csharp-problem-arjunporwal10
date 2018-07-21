@@ -19,6 +19,7 @@ namespace AggregateGDPPopulation
             string[] AllData = File.ReadAllLines(FilePath);
             StreamReader r = new StreamReader(@"../../../../AggregateGDPPopulation/data/countryContinentJsonFile.json");
             var json = r.ReadToEnd();
+            r.Close();
             var Mapper = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             string[] headers = AllData[0].Split(',');
             int indexOfPopulation = Array.IndexOf(headers, "\"Population (Millions) 2012\"");
