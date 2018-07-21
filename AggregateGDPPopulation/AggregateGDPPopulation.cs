@@ -59,7 +59,7 @@ namespace AggregateGDPPopulation
             StreamWriter outputdata = new StreamWriter(outputFilePath);
             outputdata.WriteLine(finalObject);
             outputdata.Close();
-            //Console.WriteLine(finalObject);
+            
             //Console.ReadLine();
         }
     }
