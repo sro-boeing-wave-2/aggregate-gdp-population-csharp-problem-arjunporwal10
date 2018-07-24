@@ -12,9 +12,15 @@ namespace AggregateGDPPopulation
         public float GDP_2012 { get; set; }
         public float POPULATION_2012 { get; set; }
     }
-    public class Class1
+
+    public static class FileUtility
     {
-        public async Task<string> ReadFile(string filePath)
+        public static string ReadFileSync(string filePath)
+        {
+            return "";
+        }
+
+        public static async Task<string> ReadFileAsync(string filePath)
         {
             string content = "";
             using (StreamReader reader = new StreamReader(filePath))
@@ -23,55 +29,131 @@ namespace AggregateGDPPopulation
             }
             return content;
         }
-        public async Task WriteFile(Dictionary<String, GDPPopulation> dictionaryOfObjects)
+
+        public static async Task WriteFileAsync(string writingData)
         {
             string outputFilePath = Environment.CurrentDirectory + @"/output/output.json";
             if (!Directory.Exists(Environment.CurrentDirectory + @"/output"))
             {
                 Directory.CreateDirectory(Environment.CurrentDirectory + @"/output");
             }
-            string JsonObject = JsonConvert.SerializeObject(dictionaryOfObjects);
-                using (StreamWriter writer = new StreamWriter(outputFilePath))
-                {
-                    await writer.WriteAsync(JsonObject);
-                }  
+           
+            using (StreamWriter writer = new StreamWriter(outputFilePath))
+            {
+                await writer.WriteAsync(writingData);
+            }
         }
-        public async Task AggregateGDPPopulation(string filePath)
+
+        public static void WriteFile(string filePath)
         {
+
+        }
+    }
+    // AggregatedGDPPopulation expectedAggregatedData = new AggregatedGDPPopulation();
+    // expectedAggregatedData.DeserializeFromJSON('expected-output.json');
+    // expectedAggregatedData.AggregatedData
+
+    // AggregatedGDPPopulation actualAggregatedData;
+
+    public class AggregateGDPPopulation
+    {
+        private Dictionary<string, GDPPopulation> aggregatedData;
+
+        public Dictionary<string, GDPPopulation> AggregatedData
+        {
+            get
+            {
+                return aggregatedData;
+            }
+
+            private set { }
+        }
+
+        public AggregateGDPPopulation()
+        {
+            aggregatedData = new Dictionary<string, GDPPopulation>();
+        }
+
+        public void AddOrUpdateData(float Population, float Gdp, string nameOfContinent)
+        {
+            if (AggregatedData.ContainsKey(nameOfContinent))
+            {
+                AggregatedData[nameOfContinent].GDP_2012 += Gdp;
+                AggregatedData[nameOfContinent].POPULATION_2012 += Population;  
+            }
+            else
+            {
+                GDPPopulation Object = new GDPPopulation() { GDP_2012 = Gdp, POPULATION_2012 = Population };
+                AggregatedData.Add(nameOfContinent, Object);  
+            }
+        }
+
+        public string SerializeToJSON(Dictionary<String, GDPPopulation> dictionaryOfObjects)
+        {
+            return JsonConvert.SerializeObject(dictionaryOfObjects); 
+        }
+
+        public Dictionary<string, GDPPopulation> DeserializeFromJSON(string dataToDeserialize)
+        {
+            // Deserialize it and add some data to _aggregateData;
+            return JsonConvert.DeserializeObject<Dictionary<string, GDPPopulation>>(dataToDeserialize);
+
+        }
+        public Dictionary<string, string> MapperDeserializeFromJSON(string dataToDeserialize)
+        {
+            // Deserialize it and add some data to _aggregateData;
+            return JsonConvert.DeserializeObject<Dictionary<string, string>>(dataToDeserialize);
+
+        }
+
+        //public override bool Equals(object obj)
+        //{
+        //    return base.Equals(obj);
+        //}
+    }
+    
+
+    public class Aggregator
+    {
+        public AggregateGDPPopulation agdp;
+        public string dataFilePath;
+
+        public Aggregator(string filePath)
+        {
+            agdp = new AggregateGDPPopulation();          
+            dataFilePath = filePath; 
+        }
+        public async Task Aggregate()
+        {
+            // ReadFile
+            
             string mapperFilePath = @"../../../../AggregateGDPPopulation/data/countryContinentJsonFile.json";
-            var ReadTask1 = ReadFile(filePath);
-            var Readtask2 = ReadFile(mapperFilePath);
-            await Task.WhenAll(ReadTask1,Readtask2);
-            var Mapper = JsonConvert.DeserializeObject<Dictionary<string, string>>(Readtask2.Result);
-            string[] AllDataProcessed = ReadTask1.Result.Replace("\"", String.Empty).Trim().Split('\n');
+            var ReadCsvDataFileTask = FileUtility.ReadFileAsync(dataFilePath);
+            var ReadMapperDataFileTask = FileUtility.ReadFileAsync(mapperFilePath);
+            Dictionary<string, string> Mapper = agdp.MapperDeserializeFromJSON(ReadMapperDataFileTask.Result);
+            string[] AllDataProcessed = ReadCsvDataFileTask.Result.Replace("\"", String.Empty).Trim().Split('\n');
             string[] headers = AllDataProcessed[0].Split(',');
             int indexOfPopulation = Array.IndexOf(headers, "Population (Millions) 2012");
             int indexOfGDP = Array.IndexOf(headers, "GDP Billions (USD) 2012");
             int indexOfCountries = Array.IndexOf(headers, "Country Name");
-            Dictionary<string, GDPPopulation> objectDictonary = new Dictionary<string, GDPPopulation>();
-            for (int i = 1; i < ReadTask1.Result.Length; i++)
+            // OnEachLine call agdp.AddOrUpdateContinentData();
+            
+            for (int i = 1; i < ReadCsvDataFileTask.Result.Length; i++)
             {
+                
                 try
-                {
+                {   
                     string[] row = AllDataProcessed[i].Split(',');
                     string countryName = row[indexOfCountries];
                     string nameOfContinent = Mapper[countryName];
                     float Population = float.Parse(row[indexOfPopulation]);
                     float Gdp = float.Parse(row[indexOfGDP]);
-                    try
-                    {
-                        objectDictonary[nameOfContinent].GDP_2012 += Gdp;
-                        objectDictonary[nameOfContinent].POPULATION_2012 += Population;
-                    }
-                    catch
-                    {
-                        GDPPopulation Object = new GDPPopulation() { GDP_2012 = Gdp, POPULATION_2012 = Population };
-                        objectDictonary.Add(nameOfContinent, Object);
-                    }
+                    agdp.AddOrUpdateData(Population,Gdp,nameOfContinent); 
                 }
-                catch { }               
+                catch { }
             }
-            await WriteFile(objectDictonary);
+            await FileUtility.WriteFileAsync(agdp.SerializeToJSON(agdp.AggregatedData));
         }
     }
+
 }

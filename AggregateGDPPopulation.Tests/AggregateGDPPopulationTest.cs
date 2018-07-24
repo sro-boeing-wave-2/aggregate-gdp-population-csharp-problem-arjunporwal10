@@ -13,10 +13,12 @@ namespace AggregateGDPPopulation.Tests
         [Fact]
         public async Task IsEqualExpectedAndActualJson()
         {
-            Class1 myClassObject = new Class1();
-            await myClassObject.AggregateGDPPopulation(@"../../../../AggregateGDPPopulation/data/datafile.csv");
-            string actualFile = File.ReadAllText("../../../expected-output.json");
+            Aggregator myClassObject = new Aggregator(@"../../../../AggregateGDPPopulation/data/datafile.csv");
+            Task aggregatedDataAsTask = myClassObject.Aggregate();
             string expectedFile = File.ReadAllText(Environment.CurrentDirectory + @"/output/output.json");
+
+            await aggregatedDataAsTask;
+            string actualFile = File.ReadAllText("../../../expected-output.json");
             Dictionary<string, GDPPopulation> actual = JsonConvert.DeserializeObject<Dictionary<string, GDPPopulation>>(actualFile);
             Dictionary<string, GDPPopulation> expected = JsonConvert.DeserializeObject<Dictionary<string, GDPPopulation>>(expectedFile);
             foreach (var key in actual.Keys)
